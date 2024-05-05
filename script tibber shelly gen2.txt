@@ -1,17 +1,19 @@
-let TIBBER_CONFIG = {
-  apiEndpoint: "https://api.tibber.com/v1-beta/gql",
-  accessToken: "DITT TIBBER API HÄR", // Lägg till ditt Tibber API-token här
-  maxEnergyPrice: 0.65, // Pris över vilket strömmen ska stängas av i lokal valuta för ditt API (Sverige=SEK)
-  checkInterval: 60 * 10000 // Kontrollera var 600:e sekund (10 minuter)
-};
+let consecutiveHighPriceCount = 0;
+const consecutiveHighPriceThreshold = 3; // Number of consecutive high price queries to trigger emergency mode
+const emergencyActivationDuration = 2 * 60 * 60 * 1000; // Emergency activation duration in milliseconds (here 2 hours)
 
-function getEnergyPriceQuery() {
-  return JSON.stringify({
-    query: "{\n  viewer {\n    homes {\n      currentSubscription {\n        priceInfo {\n          current {\n            total\n          }\n        }\n      }\n    }\n  }\n}"
+// Function to activate the switch in emergency mode for the specified duration
+function activateEmergencyMode() {
+  print("Activating emergency mode for", emergencyActivationDuration / (60 * 60 * 1000), "hours");
+  activateSwitch(true); // Turn on the switch
+  Timer.set(emergencyActivationDuration, false, function() {
+    print("Deactivating emergency mode");
+    activateSwitch(false); // Turn off the switch after the emergency duration ends
   });
 }
 
-function controlSwitchBasedOnPrice() {
+// Function to monitor prices and trigger emergency mode if needed
+function monitorPricesAndTriggerEmergency() {
   Shelly.call(
     "http.request",
     {
@@ -25,7 +27,7 @@ function controlSwitchBasedOnPrice() {
     },
     function (response, error) {
       if (error) {
-        print("Fel: ", error);
+        print("Error:", error);
         return;
       }
       
@@ -33,32 +35,29 @@ function controlSwitchBasedOnPrice() {
       try {
         tibberData = JSON.parse(response.body);
       } catch (e) {
-        print("Fel vid JSON-parsning: ", e);
+        print("Error parsing JSON:", e);
         return;
       }
       
       let currentPrice = tibberData.data.viewer.homes[0].currentSubscription.priceInfo.current.total;
+      print("Current energy price:", currentPrice);
+      
       if (currentPrice > TIBBER_CONFIG.maxEnergyPrice) {
-        activateSwitch(false);
+        consecutiveHighPriceCount++;
+        if (consecutiveHighPriceCount >= consecutiveHighPriceThreshold) {
+          // Trigger emergency mode when the threshold count is reached
+          activateEmergencyMode();
+          consecutiveHighPriceCount = 0; // Reset the count for consecutive high prices
+        }
       } else {
-        activateSwitch(true);
+        consecutiveHighPriceCount = 0; // Reset the count if the price is not high
       }
-      print("Aktuellt energipris - ", currentPrice);
-    });
-}
-
-function activateSwitch(activate) {
-  Shelly.call(
-    "Switch.Set",
-    { id: 0, on: activate },
-    function (response, error_code, error_message) {}
+    }
   );
 }
 
-// Kör funktionen med det angivna intervallet
+// Monitor prices and trigger emergency mode at regular intervals
 Timer.set(TIBBER_CONFIG.checkInterval, true, function () {
-  console.log("Kontrollerar energipris");
-  controlSwitchBasedOnPrice();
+  print("Monitoring energy prices");
+  monitorPricesAndTriggerEmergency();
 });
-
-controlSwitchBasedOnPrice();
