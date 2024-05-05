@@ -25,4 +25,16 @@ This project provides a script that monitors electricity prices using the Tibber
      accessToken: "YOUR_TIBBER_API_TOKEN",
      maxEnergyPrice: 0.65,
      checkInterval: 60 * 10000 // Check every 10 minutes
-   };
+   }; ```
+
+3. **Deploy the Script:**
+- Upload the script to your Shelly device.
+- Ensure the device is connected and can access the Tibber API.
+
+4. **Run the Script:**
+- The script will automatically start monitoring prices and toggle emergency mode as needed.
+- Adjust the thresholds and configurations as needed.
+
+5. **Usage**
+- The script will monitor energy prices in real-time and switch to emergency mode when prices exceed the set threshold for consecutive checks.
+- Emergency mode will turn off the switch for a specified duration, after which it will automatically reset.
