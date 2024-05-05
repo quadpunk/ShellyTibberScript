@@ -38,3 +38,6 @@ This project provides a script that monitors electricity prices using the Tibber
 5. **Usage**
 - The script will monitor energy prices in real-time and switch to emergency mode when prices exceed the set threshold for consecutive checks.
 - Emergency mode will turn off the switch for a specified duration, after which it will automatically reset.
+
+License
+This project is open source and licensed under the MIT License.
