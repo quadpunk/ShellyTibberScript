@@ -1,18 +1,18 @@
 let consecutiveHighPriceCount = 0;
-const consecutiveHighPriceThreshold = 3; // Anzahl der aufeinanderfolgenden hohen Preisabfragen, um die Notfallfunktion auszulösen
-const emergencyActivationDuration = 2 * 60 * 60 * 1000; // Dauer der Notfallaktivierung in Millisekunden (hier 2 Stunden)
+const consecutiveHighPriceThreshold = 3; // Number of consecutive high price queries to trigger emergency mode
+const emergencyActivationDuration = 2 * 60 * 60 * 1000; // Emergency activation duration in milliseconds (here 2 hours)
 
-// Funktion zum Aktivieren des Schalters im Notfallmodus für die angegebene Dauer
+// Function to activate the switch in emergency mode for the specified duration
 function activateEmergencyMode() {
-  print("Aktivierung des Notfallmodus für", emergencyActivationDuration / (60 * 60 * 1000), "Stunden");
-  activateSwitch(true); // Schalter einschalten
+  print("Activating emergency mode for", emergencyActivationDuration / (60 * 60 * 1000), "hours");
+  activateSwitch(true); // Turn on the switch
   Timer.set(emergencyActivationDuration, false, function() {
-    print("Deaktivierung des Notfallmodus");
-    activateSwitch(false); // Schalter nach Ablauf der Notfalldauer ausschalten
+    print("Deactivating emergency mode");
+    activateSwitch(false); // Turn off the switch after the emergency duration ends
   });
 }
 
-// Funktion zur Überwachung der Preise und Auslösung des Notfallmodus bei Bedarf
+// Function to monitor prices and trigger emergency mode if needed
 function monitorPricesAndTriggerEmergency() {
   Shelly.call(
     "http.request",
@@ -27,7 +27,7 @@ function monitorPricesAndTriggerEmergency() {
     },
     function (response, error) {
       if (error) {
-        print("Fehler:", error);
+        print("Error:", error);
         return;
       }
       
@@ -35,29 +35,29 @@ function monitorPricesAndTriggerEmergency() {
       try {
         tibberData = JSON.parse(response.body);
       } catch (e) {
-        print("Fehler bei der JSON-Parsung:", e);
+        print("Error parsing JSON:", e);
         return;
       }
       
       let currentPrice = tibberData.data.viewer.homes[0].currentSubscription.priceInfo.current.total;
-      print("Aktueller Energiepreis:", currentPrice);
+      print("Current energy price:", currentPrice);
       
       if (currentPrice > TIBBER_CONFIG.maxEnergyPrice) {
         consecutiveHighPriceCount++;
         if (consecutiveHighPriceCount >= consecutiveHighPriceThreshold) {
-          // Auslösen des Notfallmodus, wenn die Schwellenwertanzahl erreicht ist
+          // Trigger emergency mode when the threshold count is reached
           activateEmergencyMode();
-          consecutiveHighPriceCount = 0; // Zurücksetzen der Zähler für aufeinanderfolgende hohe Preise
+          consecutiveHighPriceCount = 0; // Reset the count for consecutive high prices
         }
       } else {
-        consecutiveHighPriceCount = 0; // Zurücksetzen des Zählers, wenn der Preis nicht hoch ist
+        consecutiveHighPriceCount = 0; // Reset the count if the price is not high
       }
     }
   );
 }
 
-// Überwachung der Preise und Auslösung des Notfallmodus in regelmäßigen Abständen
+// Monitor prices and trigger emergency mode at regular intervals
 Timer.set(TIBBER_CONFIG.checkInterval, true, function () {
-  print("Überwachung der Energiepreise");
+  print("Monitoring energy prices");
   monitorPricesAndTriggerEmergency();
 });
