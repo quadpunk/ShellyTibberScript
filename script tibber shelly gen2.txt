@@ -1,3 +1,10 @@
+let TIBBER_CONFIG = {
+  apiEndpoint: "https://api.tibber.com/v1-beta/gql",
+  accessToken: "DITT TIBBER API HÄR", // Lägg till ditt Tibber API-token här
+  maxEnergyPrice: 0.65, // Pris över vilket strömmen ska stängas av i lokal valuta för ditt API (Sverige=SEK)
+  checkInterval: 60 * 10000 // Kontrollera var 600:e sekund (10 minuter)
+};
+
 let consecutiveHighPriceCount = 0;
 const consecutiveHighPriceThreshold = 3; // Number of consecutive high price queries to trigger emergency mode
 const emergencyActivationDuration = 2 * 60 * 60 * 1000; // Emergency activation duration in milliseconds (here 2 hours)
