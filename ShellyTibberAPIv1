@@ -1,8 +1,8 @@
 let TIBBER_CONFIG = {
   apiEndpoint: "https://api.tibber.com/v1-beta/gql",
-  accessToken: "DITT TIBBER API HÄR", // Lägg till ditt Tibber API-token här
-  maxEnergyPrice: 0.65, // Pris över vilket strömmen ska stängas av i lokal valuta för ditt API (Sverige=SEK)
-  checkInterval: 60 * 10000 // Kontrollera var 600:e sekund (10 minuter)
+  accessToken: "DITT TIBBER API HÄR", // Add your tibber API here
+  maxEnergyPrice: 0.65, // Price above which the power should be turned off in local currency for your API (Sweden=SEK)
+  checkInterval: 60 * 10000 // Check every 600 seconds (10 minutes)
 };
 
 function getEnergyPriceQuery() {
