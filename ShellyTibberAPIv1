@@ -1,0 +1,64 @@
+let TIBBER_CONFIG = {
+  apiEndpoint: "https://api.tibber.com/v1-beta/gql",
+  accessToken: "DITT TIBBER API HÄR", // Lägg till ditt Tibber API-token här
+  maxEnergyPrice: 0.65, // Pris över vilket strömmen ska stängas av i lokal valuta för ditt API (Sverige=SEK)
+  checkInterval: 60 * 10000 // Kontrollera var 600:e sekund (10 minuter)
+};
+
+function getEnergyPriceQuery() {
+  return JSON.stringify({
+    query: "{\n  viewer {\n    homes {\n      currentSubscription {\n        priceInfo {\n          current {\n            total\n          }\n        }\n      }\n    }\n  }\n}"
+  });
+}
+
+function controlSwitchBasedOnPrice() {
+  Shelly.call(
+    "http.request",
+    {
+      url: TIBBER_CONFIG.apiEndpoint,
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + TIBBER_CONFIG.accessToken,
+        "Content-Type": "application/json"
+      },
+      body: getEnergyPriceQuery()
+    },
+    function (response, error) {
+      if (error) {
+        print("Fel: ", error);
+        return;
+      }
+
+      let tibberData;
+      try {
+        tibberData = JSON.parse(response.body);
+      } catch (e) {
+        print("Fel vid JSON-parsning: ", e);
+        return;
+      }
+
+      let currentPrice = tibberData.data.viewer.homes[0].currentSubscription.priceInfo.current.total;
+      if (currentPrice > TIBBER_CONFIG.maxEnergyPrice) {
+        activateSwitch(false);
+      } else {
+        activateSwitch(true);
+      }
+      print("Aktuellt energipris - ", currentPrice);
+    });
+}
+
+function activateSwitch(activate) {
+  Shelly.call(
+    "Switch.Set",
+    { id: 0, on: activate },
+    function (response, error_code, error_message) {}
+  );
+}
+
+// Kör funktionen med det angivna intervallet
+Timer.set(TIBBER_CONFIG.checkInterval, true, function () {
+  console.log("Kontrollerar energipris");
+  controlSwitchBasedOnPrice();
+});
+
+controlSwitchBasedOnPrice();
